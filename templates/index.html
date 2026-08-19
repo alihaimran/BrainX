@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrainX</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <span class="brand-mark">⚡</span>
+          <span class="brand-name">BrainX</span>
+        </div>
+        <button class="icon-btn" id="collapseBtn" title="Collapse sidebar">☰</button>
+      </div>
+
+      <button class="new-chat-btn" id="newChatBtn">
+        <span class="plus">+</span> New chat
+      </button>
+
+      <nav class="side-nav">
+        <button class="nav-item" data-view="images">🖼️ <span>Images</span></button>
+        <button class="nav-item" data-view="library">📚 <span>Library</span></button>
+        <button class="nav-item" data-view="plugins">🧩 <span>Plugins</span></button>
+        <button class="nav-item" data-view="codex">💻 <span>Codex</span></button>
+        <button class="nav-item" data-view="more">⋯ <span>More</span></button>
+      </nav>
+
+      <div class="sidebar-section-label">Recent</div>
+      <div class="history-list" id="historyList"></div>
+
+      <div class="sidebar-bottom">
+        <div class="model-pill">Groq · Llama 3.3</div>
+        <div class="user-chip">
+          <span class="avatar" id="userAvatar">U</span>
+          <span id="userEmailLabel">Free plan</span>
+          <button class="icon-btn logout-btn" id="logoutBtn" title="Log out">⏻</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main chat area -->
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="mobileMenuBtn">☰</button>
+        <div class="topbar-title">BrainX</div>
+        <div class="topbar-spacer"></div>
+      </header>
+
+      <section class="chat-area" id="chatArea">
+        <div class="welcome" id="welcome">
+          <div class="welcome-mark">⚡</div>
+          <h1>What can I help with?</h1>
+          <p class="welcome-sub">Ask anything, or attach an image to analyze it.</p>
+        </div>
+        <div class="messages" id="messages"></div>
+      </section>
+
+      <form class="composer" id="composerForm">
+        <div class="composer-inner">
+          <div class="image-preview" id="imagePreview" hidden>
+            <img id="previewImg" src="" alt="preview">
+            <button type="button" class="remove-img" id="removeImg">✕</button>
+          </div>
+          <div class="composer-row">
+            <button type="button" class="icon-btn attach-btn" id="attachBtn" title="Attach image">📎</button>
+            <input type="file" id="fileInput" accept="image/*" hidden>
+            <textarea id="messageInput" placeholder="Message BrainX..." rows="1"></textarea>
+            <button type="submit" class="send-btn" id="sendBtn" title="Send">➤</button>
+          </div>
+        </div>
+        <div class="disclaimer">BrainX can make mistakes. Verify important information.</div>
+      </form>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

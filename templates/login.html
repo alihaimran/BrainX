@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrainX — Log in</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="brand-mark">⚡</span>
+      <span class="brand-name">BrainX</span>
+    </div>
+    <h1>Welcome back</h1>
+    <p class="login-sub">Log in to continue to BrainX</p>
+
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="••••••••" required>
+
+      <div class="login-error" id="loginError" hidden>Please enter both email and password.</div>
+
+      <button type="submit" class="login-btn">Log in</button>
+    </form>
+
+    <p class="login-note">Demo login — any email &amp; password will work.</p>
+  </div>
+
+  <script src="{{ url_for('static', filename='login.js') }}"></script>
+</body>
+</html>
