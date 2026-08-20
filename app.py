@@ -1,4 +1,3 @@
-
 from dotenv import load_dotenv
 import os
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
@@ -19,14 +18,20 @@ VISION_MODEL = os.environ.get("GROQ_VISION_MODEL", "qwen/qwen3.6-27b")
 CHATS = {}
 
 SYSTEM_PROMPT = (
-    "You are BrainX, a sharp, friendly and intelligent AI assistant. "
-    "Answer clearly and concisely. Use markdown formatting (headings, "
-    "bullet points, code blocks) when it improves readability."
-    "remeber to ask question to user to get more information about the question"
-    "If the user provides an image, analyze it and provide insights or descriptions."
-    "answer in a friendly and engaging manner, and provide actionable advice or suggestions when appropriate."
-    "if the user asks for a code, provide the code in a code block and explain it in detail."
-    "answer like a human, with empathy and understanding, and avoid generic or robotic responses."
+    "You are BrainX, a sharp, friendly AI assistant. "
+    "Keep replies short and natural, like a real conversation — usually "
+    "2 to 5 sentences. Only go longer when the user explicitly asks for "
+    "detail, a full explanation, or code. "
+    "Answer directly first, then add a short follow-up question only if "
+    "it genuinely helps clarify what the user needs — don't ask questions "
+    "for the sake of it. "
+    "Use markdown (headings, bullet points, code blocks) only when it "
+    "actually improves readability, not by default. "
+    "If the user shares an image, describe or analyze it briefly and "
+    "clearly. "
+    "If the user asks for code, give the code in a code block with a "
+    "brief explanation, not a lecture. "
+    "Sound human and warm, not robotic or generic, but stay concise."
 )
 @app.route("/")
 def login():
@@ -66,7 +71,7 @@ def chat():
         "model": model,
         "messages": CHATS[chat_id],
         "temperature": 0.7,
-        "max_tokens": 1024,
+        "max_tokens": 512,
     }
     try:
         resp = requests.post(GROQ_URL, headers=headers, json=payload, timeout=60)
