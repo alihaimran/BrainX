@@ -41,14 +41,77 @@ function saveChats() {
 
 function renderHistoryList() {
   historyList.innerHTML = "";
-  const ids = Object.keys(chats).sort((a, b) => chats[b].updatedAt - chats[a].updatedAt);
+  // Only show chats that actually have messages in them
+  const ids = Object.keys(chats)
+    .filter((id) => chats[id].messages && chats[id].messages.length > 0)
+    .sort((a, b) => chats[b].updatedAt - chats[a].updatedAt);
+
   for (const id of ids) {
     const item = document.createElement("div");
     item.className = "history-item" + (id === activeChatId ? " active" : "");
-    item.textContent = chats[id].title || "New chat";
-    item.addEventListener("click", () => setActiveChat(id));
+
+    const title = document.createElement("span");
+    title.className = "history-item-title";
+    title.textContent = chats[id].title || "New chat";
+    title.addEventListener("click", () => setActiveChat(id));
+
+    const actions = document.createElement("div");
+    actions.className = "history-actions";
+    actions.innerHTML = `
+      <button type="button" class="history-action-btn rename" title="Rename">✎</button>
+      <button type="button" class="history-action-btn delete" title="Delete">🗑</button>
+    `;
+
+    actions.querySelector(".rename").addEventListener("click", (e) => {
+      e.stopPropagation();
+      startRename(id, title);
+    });
+
+    actions.querySelector(".delete").addEventListener("click", (e) => {
+      e.stopPropagation();
+      deleteChat(id);
+    });
+
+    item.appendChild(title);
+    item.appendChild(actions);
     historyList.appendChild(item);
   }
+}
+
+function startRename(id, titleEl) {
+  titleEl.contentEditable = "true";
+  titleEl.focus();
+  document.execCommand("selectAll", false, null);
+
+  const finish = (save) => {
+    titleEl.contentEditable = "false";
+    if (save) {
+      const newTitle = titleEl.textContent.trim() || "New chat";
+      chats[id].title = newTitle.slice(0, 40);
+      saveChats();
+    }
+    renderHistoryList();
+  };
+
+  titleEl.addEventListener("blur", () => finish(true), { once: true });
+  titleEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); titleEl.blur(); }
+    if (e.key === "Escape") { e.preventDefault(); finish(false); }
+  });
+}
+
+function deleteChat(id) {
+  if (!confirm("Delete this chat?")) return;
+  delete chats[id];
+  saveChats();
+
+  if (id === activeChatId) {
+    activeChatId = null;
+    localStorage.removeItem("brainx_active_chat");
+    messagesEl.innerHTML = "";
+    welcomeEl.classList.remove("hidden");
+  }
+  renderHistoryList();
 }
 
 function setActiveChat(id) {
@@ -180,14 +243,22 @@ function renderMarkdown(raw) {
   return html;
 }
 
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 function addMessage(role, text, imageDataUrl, persist = true) {
   welcomeEl.classList.add("hidden");
   const msg = document.createElement("div");
   msg.className = `msg ${role}`;
-
-  const avatar = document.createElement("div");
-  avatar.className = "bubble-avatar";
-  avatar.textContent = role === "user" ? "U" : "B";
 
   const wrap = document.createElement("div");
   wrap.className = "msg-wrap";
@@ -205,19 +276,53 @@ function addMessage(role, text, imageDataUrl, persist = true) {
 
   wrap.appendChild(content);
 
+  const actions = document.createElement("div");
+  actions.className = "msg-actions";
+
   if (role === "assistant") {
-    const actions = document.createElement("div");
-    actions.className = "msg-actions";
     actions.innerHTML = `
       <button type="button" class="msg-action-btn" data-action="copy" title="Copy">⧉</button>
+      <button type="button" class="msg-action-btn" data-action="download" title="Download">⬇</button>
+      <button type="button" class="msg-action-btn" data-action="edit" title="Edit">✎</button>
     `;
-    actions.querySelector('[data-action="copy"]').addEventListener("click", () => {
-      navigator.clipboard.writeText(text);
-    });
-    wrap.appendChild(actions);
+  } else {
+    actions.innerHTML = `
+      <button type="button" class="msg-action-btn" data-action="copy" title="Copy">⧉</button>
+      <button type="button" class="msg-action-btn" data-action="edit" title="Edit">✎</button>
+    `;
   }
 
-  msg.appendChild(avatar);
+  actions.querySelector('[data-action="copy"]').addEventListener("click", () => {
+    navigator.clipboard.writeText(content.textContent);
+  });
+
+  const downloadBtn = actions.querySelector('[data-action="download"]');
+  if (downloadBtn) {
+    downloadBtn.addEventListener("click", () => {
+      downloadText("brainx-reply.txt", content.textContent);
+    });
+  }
+
+  const editBtn = actions.querySelector('[data-action="edit"]');
+  if (editBtn) {
+    editBtn.addEventListener("click", () => {
+      const isEditing = content.getAttribute("contenteditable") === "true";
+      if (!isEditing) {
+        content.setAttribute("contenteditable", "true");
+        content.focus();
+        editBtn.textContent = "✓";
+        editBtn.title = "Save";
+      } else {
+        content.setAttribute("contenteditable", "false");
+        editBtn.textContent = "✎";
+        editBtn.title = "Edit";
+        const newText = content.textContent;
+        updateStoredMessageText(msg, newText);
+      }
+    });
+  }
+
+  wrap.appendChild(actions);
   msg.appendChild(wrap);
   messagesEl.appendChild(msg);
   chatArea.scrollTop = chatArea.scrollHeight;
@@ -226,12 +331,21 @@ function addMessage(role, text, imageDataUrl, persist = true) {
   return content;
 }
 
+function updateStoredMessageText(msgEl, newText) {
+  if (!activeChatId || !chats[activeChatId]) return;
+  const index = Array.from(messagesEl.children).indexOf(msgEl);
+  if (index === -1) return;
+  if (chats[activeChatId].messages[index]) {
+    chats[activeChatId].messages[index].text = newText;
+    saveChats();
+  }
+}
+
 function addTypingIndicator() {
   const msg = document.createElement("div");
   msg.className = "msg assistant";
   msg.id = "typingMsg";
   msg.innerHTML = `
-    <div class="bubble-avatar">B</div>
     <div class="msg-wrap"><div class="msg-content"><div class="typing"><span></span><span></span><span></span></div></div></div>
   `;
   messagesEl.appendChild(msg);
@@ -289,11 +403,11 @@ form.addEventListener("submit", async (e) => {
 });
 
 newChatBtn.addEventListener("click", () => {
-  const id = crypto.randomUUID();
-  chats[id] = { title: "New chat", messages: [], updatedAt: Date.now() };
-  activeChatId = id;
-  localStorage.setItem("brainx_active_chat", id);
-  saveChats();
+  // Current chat (if it has messages) is already saved in `chats` and will
+  // show up in the Recent list. We just clear the view and start fresh —
+  // a real chat entry is only created once the user sends a message.
+  activeChatId = null;
+  localStorage.removeItem("brainx_active_chat");
   renderHistoryList();
   messagesEl.innerHTML = "";
   welcomeEl.classList.remove("hidden");
