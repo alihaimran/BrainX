@@ -1,6 +1,7 @@
-import os
+
 from dotenv import load_dotenv
-load_dotenv()
+import os
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 import base64
 import uuid
 from flask import Flask, request, jsonify, render_template, session
