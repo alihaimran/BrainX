@@ -1,9 +1,10 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import base64
 import uuid
 from flask import Flask, request, jsonify, render_template, session
 import requests
-
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "brainx-dev-secret-change-me")
 
